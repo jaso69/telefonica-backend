@@ -5,11 +5,11 @@ const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 module.exports = async (req, res) => {
 
   // Configurar encabezados CORS
-  res.setHeader('Access-Control-Allow-Origin', '*'); // o el dominio específico que necesites
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-   if (req.method === 'OPTIONS') {
+  if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
   
@@ -28,6 +28,12 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Configurar headers para Server-Sent Events (SSE)
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    // Realizar la petición con streaming habilitado
     const response = await axios.post(
       'https://api.deepseek.com/v1/chat/completions',
       {
@@ -156,18 +162,95 @@ Para troubleshooting, considera flujos del diagrama: verifica conexiones AES50 p
           }
         ],
         temperature: 0.7,
+        stream: true, // Habilitar streaming
       },
       {
         headers: {
           Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
           'Content-Type': 'application/json',
         },
+        responseType: 'stream' // Importante para recibir el stream
       }
     );
 
-    res.status(200).json(response.data);
+    // Variable para acumular la respuesta completa
+    let fullResponse = '';
+
+    // Manejar el stream de datos
+    response.data.on('data', (chunk) => {
+      const lines = chunk.toString().split('\n');
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          
+          // Verificar si es el final del stream
+          if (data === '[DONE]') {
+            // Enviar evento de finalización
+            res.write(`data: ${JSON.stringify({ 
+              type: 'done', 
+              fullResponse: fullResponse 
+            })}\n\n`);
+            res.end();
+            return;
+          }
+
+          try {
+            const parsed = JSON.parse(data);
+            
+            // Extraer el contenido del chunk
+            if (parsed.choices && 
+                parsed.choices[0] && 
+                parsed.choices[0].delta && 
+                parsed.choices[0].delta.content) {
+              
+              const content = parsed.choices[0].delta.content;
+              fullResponse += content;
+              
+              // Enviar chunk al cliente
+              res.write(`data: ${JSON.stringify({ 
+                type: 'chunk', 
+                content: content,
+                fullResponse: fullResponse 
+              })}\n\n`);
+            }
+          } catch (parseError) {
+            console.error('Error parsing chunk:', parseError);
+            continue;
+          }
+        }
+      }
+    });
+
+    // Manejar errores del stream
+    response.data.on('error', (error) => {
+      console.error('Stream error:', error);
+      res.write(`data: ${JSON.stringify({ 
+        type: 'error', 
+        message: 'Error en el streaming' 
+      })}\n\n`);
+      res.end();
+    });
+
+    // Manejar finalización del stream
+    response.data.on('end', () => {
+      if (!res.headersSent) {
+        res.write(`data: ${JSON.stringify({ 
+          type: 'done', 
+          fullResponse: fullResponse 
+        })}\n\n`);
+        res.end();
+      }
+    });
+
   } catch (error) {
     console.error('Error al llamar a DeepSeek:', error.response?.data || error.message);
+    
+    // Si hay error, enviar respuesta de error como stream
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'application/json');
+    }
+    
     res.status(500).json({
       error: "Error al procesar la solicitud",
       details: error.response?.data || error.message,
