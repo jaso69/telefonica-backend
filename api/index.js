@@ -224,6 +224,27 @@ Esta tabla detalla el ruteo interno y patching de salidas, incluyendo etiquetas 
 | DL escenario ethernet | Switch | Ethernet | ETH-AUD-06 |
 | Router | Switch | Ethernet | ETH-AUD-07 |
 
+### Direcciones IP de Dispositivos de Audio
+
+La siguiente tabla lista las direcciones IP de los dispositivos en la red de audio, útiles para configuración, monitoreo y resolución de problemas de conectividad. Incluye marca, modelo, protocolo y IP asociada.
+
+| Marca       | Modelo                     | Protocolo | IP              |
+|-------------|----------------------------|-----------|-----------------|
+| Klark Teknik | DM8500                    | ETHERNET | 192.168.20.20  |
+| Klark Teknik | DM8500 DANTE              | DANTE    | 169.254.20.160 |
+| SHURE       | MXWAPT8                   | ETHERNET | 192.168.20.90  |
+| SHURE       | MXWAPT8 DANTE             | DANTE    | 169.254.20.200 |
+| SHURE       | MXWAPT8-2                 | ETHERNET | 192.168.20.100 |
+| SHURE       | MXWAPT8-2 DANTE           | DANTE    | 169.254.20.210 |
+| SHURE       | MXWCS8                    | ETHERNET | 192.168.20.20  |
+| SHURE       | MXWCS8-2                  | ETHERNET | 192.168.20.105 |
+| MIDAS       | HD96                      | ETHERNET | 192.168.20.10  |
+| MIDAS       | HD96                      | DANTE    | 169.254.20.150 |
+| LAB GRUPPEN | D 10:4L DELAY-L-SUB-L     | DANTE    | 169.254.252.111|
+| LAB GRUPPEN | D 10:4L DELAY-R-SUB-R     | DANTE    | 169.254.252.125|
+| LAB GRUPPEN | D 10:4L FRONTFILL-SUB-C   | DANTE    | 169.254.186.15 |
+| LAB GRUPPEN | D 20:4L PA-L-C-R          | DANTE    | 169.254.207.137
+
 ### Guía para Localización de Averías
 - **Verificación de Cables**: Usa las etiquetas (e.g., DL-C-001 para PC 2 L, 40403583 para TL 1) para rastrear conexiones físicas desde el origen (fuente) al destino (salida). Revisa continuidad y conectores.
 - **Flujos de Señal**: Para averías, sigue el ruteo: si un micrófono (e.g., DL-E-099) no suena, verifica el canal interno 1, AES50-03 a DL Escenario, y salida DL-E-111.
